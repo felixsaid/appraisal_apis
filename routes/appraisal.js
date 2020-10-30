@@ -1,6 +1,7 @@
 const db = require("../src/db");
 const router = require("express").Router();
 const authorization = require("../middleware/authorization");
+const func = require("../main");
 
 //create reviews
 router.post("/add_review", authorization, async function(req, res){
@@ -208,7 +209,7 @@ router.post("/add_emp_objective", authorization, async function(req, res){
                 message : "A field is missing. Kindly ensure that you have provided all the fields."
             });
         }else{
-            db.query("insert into emp_objectives(objective_name, emp_id, review_id) values (?)", 
+            db.query("insert into emp_objectives(objective_name, emp_id, review_id) values (?,?,?)", 
                             [name, employee, review], async function(error, results, fields){
                                 if(error){
                                     return res.status(500).send({
@@ -235,17 +236,39 @@ router.post("/add_emp_objective", authorization, async function(req, res){
 //get all employee objectives
 router.get("/all_emp_objectives", authorization, async function(req, res){
     try {
-        
-        db.query("select * from emp_objectives join employees on emp_objectives.emp_id = employees.emp_id", async function(error, results, fields){
+        var options = {
+            sql: `select emp_objectives.objective_id, emp_objectives.objective_name, emp_objectives.emp_id, emp_objectives.date_created, employees.emp_id, employees.emp_name, employees.emp_email from emp_objectives join employees on emp_objectives.emp_id = employees.emp_id`,
+            nestTables: true,
+          };
+
+          var nestingOptions = [
+            {
+              tableName: "emp_objectives",
+              pkey: "objective_id",
+              fkeys: 
+                    [
+                        { table: "employees", col: "emp_id" },
+                        { table: "reviews", col: "review_id" }
+                    ],
+            },
+            {
+              tableName: "employees",
+              pkey: "emp_id"
+            }
+          ];
+
+        db.query(options, async function(error, results, fields){
             if(error){
                 return res.status(500).send({
                     error: true,
                     message: error.sqlMessage,
                   });
             }else{
+                var nestedRows = func.convertToNested(results, nestingOptions);
+
                 return res.status(200).send({
                     error: false,
-                    data: results,
+                    data: nestedRows,
                     message: "all employee objectives successfully returned."
                 })
             }
@@ -262,17 +285,41 @@ router.get("/all_emp_objectives", authorization, async function(req, res){
 router.get("/:id/emp_objectives_id", authorization, async function(req, res){
     const { id } = req.params;
     try {
+
+        var options = {
+            sql: `select emp_objectives.objective_id, emp_objectives.objective_name, emp_objectives.emp_id, emp_objectives.date_created, employees.emp_id, employees.emp_name, employees.emp_email from emp_objectives join employees on emp_objectives.emp_id = employees.emp_id where emp_objectives.emp_id = ${id}`,
+            nestTables: true,
+          };
+
+          var nestingOptions = [
+            {
+              tableName: "emp_objectives",
+              pkey: "objective_id",
+              fkeys: 
+                    [
+                        { table: "employees", col: "emp_id" },
+                        { table: "reviews", col: "review_id" }
+                    ],
+            },
+            {
+              tableName: "employees",
+              pkey: "emp_id"
+            }
+          ];
         
-        db.query("select * from emp_objectives join employees on emp_objectives.emp_id = employees.emp_id where emp_objectives.emp_id = ?", [id], async function(error, results, fields){
+        db.query(options, [id], async function(error, results, fields){
             if(error){
                 return res.status(500).send({
                     error: true,
                     message: error.sqlMessage,
                   });
             }else{
+
+                var nestedRows = func.convertToNested(results, nestingOptions);
+
                 return res.status(200).send({
                     error: false,
-                    data: results,
+                    data: nestTables,
                     message: `employee objectives with id ${id} successfully returned.`
                 })
             }

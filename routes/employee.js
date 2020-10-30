@@ -103,9 +103,9 @@ router.post("/login", async function(req, res){
 
                             if(validPassword){
                                 const token = jwtGenerator(rows.emp_id);
-                                const emp_name = rows.user_name;
-                                const emp_email = rows.user_email;
-                                const emp_id = rows.user_id;
+                                const emp_name = rows.emp_name;
+                                const emp_email = rows.emp_email;
+                                const emp_id = rows.emp_id;
                                 return res.status(200).send({
                                     error : false,
                                     data : { emp_id: emp_id, token: token, emp_name: emp_name, emp_email: emp_email},

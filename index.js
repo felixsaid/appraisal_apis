@@ -13,5 +13,5 @@ app.use("/appraisal", require("./routes/appraisal"));
 
 
 app.listen(4001, () => {
-    console.log("server is running on port 4000.");
+    console.log("server is running on port 4001.");
 })
